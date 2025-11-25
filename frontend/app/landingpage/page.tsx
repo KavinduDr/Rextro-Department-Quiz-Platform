@@ -105,7 +105,7 @@ useEffect(() => {
             <button
               disabled={!published}
               className="group bg-[#df7500]/10 backdrop-blur-sm text-[#651321] px-8 py-4 rounded-full font-semibold text-lg flex items-center gap-3 hover:bg-[#df7500]/20 transition-all duration-300 transform hover:scale-105 border border-[#df7500]/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => router.push('/leaderboard')}
+              onClick={() => router.push('/leaderboard/top5')}
             >
               <Trophy className="w-5 h-5 group-hover:animate-bounce text-[#df7500]" />
               View Leaderboard

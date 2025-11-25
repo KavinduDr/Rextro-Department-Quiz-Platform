@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import Attempt from "../models/Attempt.js";
+import Question from "../models/Question.js";
 
-// GET /api/leaderboard?quizId=1&limit=50
+
 export const getLeaderboard = async (req: Request, res: Response) => {
   try {
     const quizIdRaw = req.query.quizId as string | undefined;
@@ -13,22 +14,22 @@ export const getLeaderboard = async (req: Request, res: Response) => {
     const limit = limitRaw ? Math.max(1, Math.min(200, Number(limitRaw))) : 50;
 
     const pipeline: any[] = [
-      // include only submitted attempts for the specified quiz
+      
       { $match: { quizId: quizId, submitTime: { $exists: true } } },
       {
-        // group by student (ObjectId reference)
+        
         $group: {
           _id: "$student",
           correctCount: { $sum: { $cond: ["$isCorrect", 1, 0] } },
-          // when the user finished the quiz (completion time)
+          
           completionTime: { $max: "$submitTime" },
-          // sum the timeTaken across all attempts (used for tiebreaking)
+          
           totalTimeTaken: { $sum: { $ifNull: ["$timeTaken", 0] } },
           attempts: { $sum: 1 }
         }
       },
       {
-        // join user details for display (name, studentId)
+        
         $lookup: {
           from: "users",
           localField: "_id",
@@ -49,18 +50,28 @@ export const getLeaderboard = async (req: Request, res: Response) => {
           attempts: 1
         }
       },
-      // Sort per requested rules:
-      // 1) correctCount desc (more correct answers = better)
-      // 2) completionTime asc (earlier completion = better)
-      // 3) totalTimeTaken asc (less total time spent = better)
-      // 4) attempts asc (fewer attempts = better)
+      
+      
+      
+      
+      
       { $sort: { correctCount: -1, completionTime: 1, totalTimeTaken: 1, attempts: 1 } },
       { $limit: limit }
     ];
 
+    
+    const totalQuestions = await Question.countDocuments({ quizId: quizId }).exec();
+
     const results = await Attempt.aggregate(pipeline).exec();
 
-    return res.status(200).json({ data: results });
+    
+    const enriched = results.map((r: any) => {
+      const correct = Number(r.correctCount) || 0;
+      const pct = totalQuestions ? Math.round((correct / totalQuestions) * 10000) / 100 : 0;
+      return { ...r, totalQuestions, correctPercentage: pct };
+    });
+
+    return res.status(200).json({ data: enriched });
   } catch (err: any) {
     console.error("getLeaderboard error:", err);
     return res.status(500).json({ message: "Internal server error" });
