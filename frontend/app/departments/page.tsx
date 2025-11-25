@@ -127,7 +127,7 @@ export default function DepartmentsPage() {
       <div className="w-full max-w-md mx-auto" style={{ position: 'relative', zIndex: 2 }}>
         <h1 className="text-2xl md:text-3xl font-bold text-[#651321] mb-2 text-center">Quizzes</h1>
         <div className="text-center mb-6">
-          <div className="text-sm text-[#651321] opacity-90">{user?.name ? `Here we go, ${user.name}` : 'Welcome'}</div>
+          <div className="text-sm text-[#651321] opacity-90">{(session?.user?.name ?? user?.name) ? `Here we go, ${session?.user?.name ?? user?.name}` : 'Welcome'}</div>
         </div>
         <div className="flex flex-col gap-5">
           {loading && <div className="text-center text-sm text-gray-600">Loading quizzes...</div>}

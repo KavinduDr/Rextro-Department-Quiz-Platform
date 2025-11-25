@@ -30,6 +30,7 @@ interface SchoolData {
 const Leaderboard: React.FC = () => {
   const [selectedSchool, setSelectedSchool] = useState<SchoolData | null>(null);
   const [schools, setSchools] = useState<SchoolData[]>([]);
+  const [quizName, setQuizName] = useState<string | null>(null);
   const user = useUser();
   const searchParams = useSearchParams();
 
@@ -48,6 +49,18 @@ const Leaderboard: React.FC = () => {
 
         const transformed = transformApiLeaderboard(json);
         setSchools(transformed);
+
+        
+        try {
+          const api = await createStudentApi();
+          const quizResp = await api.get(`/quizzes/${encodeURIComponent(String(quizId))}`);
+          const qb: any = quizResp?.data ?? {};
+          const q = qb?.quiz ?? qb;
+          setQuizName(q?.name ?? `Quiz ${quizId}`);
+        } catch (qerr) {
+          
+          setQuizName(`Quiz ${quizId}`);
+        }
       } catch (error) {
         console.error('Error fetching leaderboard data:', error);
       }
@@ -132,7 +145,7 @@ const Leaderboard: React.FC = () => {
           <h1 className="text-4xl font-bold mb-2" style={{ color: '#651321' }}>
             Leaderboard
           </h1>
-          <p className="text-gray-600">Quiz Rankings</p>
+          <p className="text-gray-600">{quizName ? `${quizName} — Quiz Rankings` : 'Quiz Rankings'}</p>
         </div>
 
 

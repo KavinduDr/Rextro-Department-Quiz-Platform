@@ -1,6 +1,6 @@
 "use client";
 import { Check, ChevronRight } from 'lucide-react';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createStudentApi } from '@/interceptors/student';
@@ -267,7 +267,103 @@ export default function Quiz(): React.JSX.Element | null {
 
   const handleGoToLeaderboard = (): void => {
     setShowCompletionCard(false);
-    router.push('/leaderboard');
+    if (quizId) {
+      router.push(`/leaderboard/departmentLeaderboard?quizId=${encodeURIComponent(String(quizId))}`);
+    } else {
+      router.push('/leaderboard');
+    }
+  };
+
+  
+  const Confetti: React.FC<{ show: boolean }> = ({ show }) => {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const rafRef = useRef<number | null>(null);
+
+    useEffect(() => {
+      if (!show) return;
+      const canvas = canvasRef.current!;
+      const ctx = canvas.getContext('2d')!;
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+
+      const particles: Array<any> = [];
+
+      const colors = ['#DF7500', '#651321', '#FFCD3C', '#8DE969', '#7CC6FF'];
+
+      function rand(min: number, max: number) { return Math.random() * (max - min) + min; }
+
+      function createParticle(x: number, y: number) {
+        return {
+          x,
+          y,
+          velX: rand(-6, 6),
+          velY: rand(-12, -4),
+          size: rand(6, 12),
+          color: colors[(Math.random() * colors.length) | 0],
+          rotation: rand(0, Math.PI * 2),
+          rotationSpeed: rand(-0.2, 0.2),
+        };
+      }
+
+      
+      const centerX = width / 2;
+      const centerY = height / 3;
+      for (let i = 0; i < 120; i++) particles.push(createParticle(centerX + rand(-80, 80), centerY + rand(-20, 20)));
+
+      let lastTime = performance.now();
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      }
+
+      window.addEventListener('resize', resize);
+
+      function update(now: number) {
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+        ctx.clearRect(0, 0, width, height);
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.velY += 30 * dt; 
+          p.x += p.velX;
+          p.y += p.velY * dt * 60 * dt; 
+          p.rotation += p.rotationSpeed;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rotation);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+          ctx.restore();
+
+          if (p.y > height + 50) particles.splice(i, 1);
+        }
+
+        if (particles.length > 0) rafRef.current = requestAnimationFrame(update);
+      }
+
+      rafRef.current = requestAnimationFrame(update);
+
+      
+      const stopTimeout = setTimeout(() => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        window.removeEventListener('resize', resize);
+      }, 3200);
+
+      return () => {
+        clearTimeout(stopTimeout);
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        window.removeEventListener('resize', resize);
+      };
+    }, [show]);
+
+    return show ? (
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 60 }}>
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+      </div>
+    ) : null;
   };
 
   const handleAnswerSelect = (answerId: string): void => {
@@ -288,6 +384,7 @@ export default function Quiz(): React.JSX.Element | null {
 
   return (
     <div className="min-h-screen bg-gradient-to-br p-4 relative" style={{ backgroundImage: 'url("/Container.png")', backgroundSize: 'cover', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }}>
+      <Confetti show={showCompletionCard} />
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.6)', zIndex: 1 }} />
 
       <div className="max-w-4xl mx-auto" style={{ position: 'relative', zIndex: 2 }}>
@@ -353,16 +450,7 @@ export default function Quiz(): React.JSX.Element | null {
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
                 </div>
                 <h2 className="text-2xl font-bold text-[#651321] mb-2">Quiz Completed!</h2>
-                {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                  <div className="bg-white/50 rounded-lg p-4">
-                    <div className="text-sm text-gray-600">Student</div>
-                    <div className="font-semibold text-[#651321]">{completionData.name}</div>
-                  </div>
-                  <div className="bg-white/50 rounded-lg p-4">
-                    <div className="text-sm text-gray-600">Score</div>
-                    <div className="font-bold text-2xl text-[#df7500]">{displayScore !== 'N/A' ? `${displayScore}%` : 'N/A'}</div>
-                  </div>
-                </div> */}
+               
                 <div className="mt-4 text-sm text-gray-600">Answered {completionData.answeredQuestions} of {completionData.totalQuestions} questions</div>
                 <div className="mt-6 flex items-center justify-center space-x-4">
                   <button onClick={() => { setShowCompletionCard(false); router.push(`/quiz-numbers?quizId=${quizId}`); }} className="px-6 py-3 rounded-full font-semibold text-lg bg-white border border-gray-200 text-gray-800 hover:opacity-90 transition-all duration-200 shadow-sm">
