@@ -59,7 +59,7 @@ useEffect(() => {
 		}
 	};
 	checkPublishedStatus();
-}, []);
+	}, [status, session]);
 
 	useEffect(() => {
 		if (status === 'authenticated') {
@@ -84,8 +84,10 @@ useEffect(() => {
 
 	useEffect(() => {
 
-		const fetchQuestions = async () => {
-			const api = await createAdminApi();
+		    const fetchQuestions = async () => {
+			    // Only fetch questions for authenticated admin users
+			    if (status !== 'authenticated' || !(session as any)?.user?.isAdmin) return;
+			    const api = await createAdminApi();
 			try {
 				const response = await api.get('/questions');
 				setQuestions(transformQuizApiQuestions((response?.data as { data: QuestionApiResponse[], success: boolean }).data));
@@ -100,14 +102,19 @@ useEffect(() => {
 		}
 
 		fetchQuestions();
-	}, []);
+	}, [status, session]);
 
 
 	useEffect(() => {
 		if (status === "unauthenticated") {
-			router.push("/admin/login");
+			router.push("/admin-access");
 		}
-	}, [status, router]);
+
+		// If authenticated but not an admin, redirect to admin login with error
+		if (status === 'authenticated' && !(session as any)?.user?.isAdmin) {
+			router.push('/admin-access');
+		}
+	}, [status, router, session]);
 
 	if (status === "loading") {
 		return (
@@ -129,7 +136,7 @@ useEffect(() => {
 
 	const handleEdit = (id: string) => {
 		setLoadingQuestionId(id);
-		router.push(`/edit-question?id=${id}`);
+		router.push(`/admin/edit-question?id=${id}`);
 	};
 
 	const handleTabChange = (index: number) => {
@@ -211,7 +218,7 @@ useEffect(() => {
 							{published ? 'Unpublish Quizzers' : 'Publish Quizzers'}
 						</button>
 						<button
-							onClick={() => router.push("/add-question")}
+							onClick={() => router.push("/admin/add-question")}
 							className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-[#df7500] to-[#651321] text-white shadow-sm hover:scale-105 hover:shadow-md transition-all duration-200"
 						>
 							<Plus size={18} /> Add New Question

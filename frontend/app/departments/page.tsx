@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createStudentApi } from '@/interceptors/student'
 import { useSession } from 'next-auth/react'
+import { useUser } from '@/contexts/UserContext'
 
 interface QuizSet {
   quizId: number;
@@ -18,6 +19,7 @@ export default function DepartmentsPage() {
   const [quizSets, setQuizSets] = useState<QuizSet[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const { user } = useUser();
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -123,7 +125,10 @@ export default function DepartmentsPage() {
         }}
       />
       <div className="w-full max-w-md mx-auto" style={{ position: 'relative', zIndex: 2 }}>
-        <h1 className="text-2xl md:text-3xl font-bold text-[#651321] mb-6 text-center">Quizzes</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#651321] mb-2 text-center">Quizzes</h1>
+        <div className="text-center mb-6">
+          <div className="text-sm text-[#651321] opacity-90">{user?.name ? `Here we go, ${user.name}` : 'Welcome'}</div>
+        </div>
         <div className="flex flex-col gap-5">
           {loading && <div className="text-center text-sm text-gray-600">Loading quizzes...</div>}
           {!loading && (!quizSets || quizSets.length === 0) && (

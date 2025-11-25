@@ -40,7 +40,7 @@ export default function AddQuestion(): React.ReactElement | null {
   
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/admin/login');
+      router.push('/admin-access');
     }
   }, [status, router]);
 
@@ -309,7 +309,7 @@ export default function AddQuestion(): React.ReactElement | null {
   };
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/admin/login' });
+    await signOut({ callbackUrl: '/admin-access' });
   };
 
   

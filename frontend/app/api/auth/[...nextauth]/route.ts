@@ -61,6 +61,15 @@ const authOptions: AuthOptions = {
         token.email = user.email
         token.name = user.name
 
+        // Mark admin flag on the token based on environment ADMIN_EMAILS
+        try {
+          const adminEmailsRaw = process.env.ADMIN_EMAILS || ''
+          const adminEmails = adminEmailsRaw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+          token.isAdmin = adminEmails.includes((user.email || '').toLowerCase())
+        } catch (e) {
+          token.isAdmin = false
+        }
+
         // Try to fetch linked backend user (id + studentId) and attach to token
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -110,6 +119,13 @@ const authOptions: AuthOptions = {
 
         // Expose it on session.token so client-side code can read it and send as Authorization header
         ;(session as any).token = customToken
+
+        // Expose admin flag on session.user so UI can adapt
+        try {
+          ;(session as any).user = { ...(session as any).user, isAdmin: Boolean((token as any).isAdmin) }
+        } catch (e) {
+          // ignore
+        }
       } catch (e) {
         console.error('Failed to sign custom JWT for session:', e)
       }
@@ -118,7 +134,7 @@ const authOptions: AuthOptions = {
     },
   },
   pages: {
-    signIn: '/admin/login',
+    signIn: '/admin-access',
     // Use a small server-side redirector so we can send admin-originated
     // OAuth errors back to the admin login UI while keeping student errors
     // routed to the student login page.
@@ -207,3 +223,6 @@ async function forwardCookiesAndReturn(nextAuthResponse: Response, request: Requ
 // to set its own httpOnly cookie. That keeps the flow reliable and easier to
 // reason about.
 export { nextAuthHandler as GET, nextAuthHandler as POST }
+// Export authOptions so server components (e.g. admin layout) can import
+// it and call getServerSession(authOptions) for server-side access checks.
+export { authOptions }

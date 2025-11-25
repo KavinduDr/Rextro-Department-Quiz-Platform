@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createStudentApi } from '@/interceptors/student';
+import NavBar from '@/components/NavBar/NavBar';
+import Footer from '@/components/Footer/Footer';
 import type { Number } from './quizNumbers';
 
 export default function QuizNumbersPage() {
@@ -184,8 +186,9 @@ export default function QuizNumbersPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-white p-4 sm:p-20">
-      <div className="w-full max-w-4xl">
+    <div className="min-h-screen flex flex-col items-center bg-white">
+      <NavBar />
+      <div className="w-full max-w-4xl mt-6">
         <div className="mb-6 flex justify-center">
           <img
             src="/9e244c43-ac14-4148-8ed1-d71b4a3d6c8f.png"
@@ -254,6 +257,7 @@ export default function QuizNumbersPage() {
       >
          Go Back
       </button>
+      <Footer />
 
     </div>
   );

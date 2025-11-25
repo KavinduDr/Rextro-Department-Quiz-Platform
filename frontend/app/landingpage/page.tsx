@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/contexts/UserContext';
 import { ChevronRight, Trophy, Brain, Users, Star, Zap, Target, Award } from 'lucide-react';
 
 
@@ -11,6 +13,8 @@ export default function LandingPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [published, setPublished] = useState(false);
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
+  const { user, loading: userLoading } = useUser();
 useEffect(() => {
   const checkPublishedStatus = async () => {
     try {
@@ -77,10 +81,20 @@ useEffect(() => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <button
-            disabled={!published}
+              disabled={!published}
               className="group bg-gradient-to-r from-[#df7500] to-[#651321] text-white px-8 py-4 rounded-full font-semibold text-lg flex items-center gap-3 hover:from-[#df7500]/80 hover:to-[#651321]/80 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
-                router.push('/login');
+                // Require the app's local `user` (from UserContext) to navigate directly.
+                // If the UserContext has no user (e.g. localStorage cleared), send to student login
+                // even when NextAuth session exists, so the app can load user profile properly.
+                if (published) {
+                  const hasLocalUser = !!user && !userLoading;
+                  if (hasLocalUser) {
+                    router.push('/departments');
+                  } else {
+                    router.push('/login?callbackUrl=/departments');
+                  }
+                }
               }}
             >
               <Zap className="w-5 h-5 group-hover:animate-pulse" />

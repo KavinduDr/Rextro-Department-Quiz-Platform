@@ -35,7 +35,15 @@ export const adminOnly = async (
 
         try {
             const decoded = jwt.verify(token, verifySecret) as { email?: string; name?: string; exp?: number };
-            // Optionally: attach admin info to request for downstream handlers
+            // Validate that the email is in the admin whitelist (if configured)
+            const adminEmailsRaw = process.env.ADMIN_EMAILS || '';
+            const adminEmails = adminEmailsRaw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+            const emailLower = (decoded.email || '').toLowerCase();
+            if (adminEmails.length > 0 && !adminEmails.includes(emailLower)) {
+                res.status(403).json({ success: false, message: 'Forbidden: not an admin' });
+                return;
+            }
+
             (req as any).admin = {
                 email: decoded.email,
                 name: decoded.name,

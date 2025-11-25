@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const cookieHeader = request.headers.get('cookie') || ''
     const isAdminOrigin = /(?:^|; )oauth_origin=admin(?:;|$)/.test(cookieHeader)
 
-    const target = isAdminOrigin ? `/admin/login?error=${encodeURIComponent(error)}` : `/login?error=${encodeURIComponent(error)}`
+    const target = isAdminOrigin ? `/admin-access?error=${encodeURIComponent(error)}` : `/login?error=${encodeURIComponent(error)}`
 
     // Clear the temporary oauth_origin cookie so it doesn't affect future flows
     const headers = new Headers()

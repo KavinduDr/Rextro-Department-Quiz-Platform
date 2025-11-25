@@ -10,18 +10,23 @@ import AdminMenu from "./AdminMenu";
 // Dropdown for Admin Portal
 import { useState, useRef, useEffect } from "react";
 import { Shield, Menu, X } from "lucide-react";
-import { signIn } from 'next-auth/react';
+import { signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/add-question", label: "Admin Portal" },
+  { href: "", label: "Admin Portal" },
 ];
 
 const NavBar = () => {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <nav className="w-full border-b border-gray-200 bg-white">
@@ -53,8 +58,8 @@ const NavBar = () => {
             if (link.label === "Admin Portal") {
               return (
                 <div key={link.href} className="relative">
-                  <AdminPortalDropdown session={session} />
-                </div>
+                    <AdminPortalDropdown session={session} mounted={mounted} />
+                  </div>
               );
             }
             return (
@@ -70,6 +75,17 @@ const NavBar = () => {
               </Link>
             );
           })}
+          {/* Sign in / out button for desktop (render only after mount to avoid hydration mismatch) */}
+          <div className="hidden lg:flex items-center">
+            {mounted && status === 'authenticated' ? (
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="ml-2 px-3 py-1 rounded-lg font-semibold bg-white text-[#651321] border border-[#dfd7d0] shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                Logout
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
@@ -90,8 +106,8 @@ const NavBar = () => {
               if (link.label === "Admin Portal") {
                 return (
                   <div key={link.href}>
-                    <AdminPortalDropdown session={session} mobile={true} />
-                  </div>
+                      <AdminPortalDropdown session={session} mobile={true} mounted={mounted} />
+                    </div>
                 );
               }
               return (
@@ -108,6 +124,21 @@ const NavBar = () => {
                 </Link>
               );
             })}
+            {/* Mobile sign in / out */}
+            <div className="pt-2">
+              {mounted && status === 'authenticated' ? (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); signOut({ callbackUrl: '/' }) }}
+                  className="w-full text-left px-4 py-2 rounded bg-white text-[#651321] border border-[#dfd7d0] font-semibold"
+                >
+                  Logout
+                </button>
+              ) : (
+                  mounted ? (
+                    ''
+                  ) : null
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -116,7 +147,7 @@ const NavBar = () => {
 };
 
 
-const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile?: boolean }) => {
+const AdminPortalDropdown = ({ session, mobile = false, mounted = false }: { session: any; mobile?: boolean; mounted?: boolean }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -140,14 +171,14 @@ const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile
     setError('');
     try {
       // Mark this OAuth attempt as coming from the admin UI so the
-      // server-side error redirect can send users back to `/admin/login`
+      // server-side error redirect can send users back to `/admin-access`
       // instead of the global student `/login` page.
       try {
         document.cookie = `oauth_origin=admin; path=/; max-age=${60}`;
       } catch (e) {
         // ignore in non-browser contexts
       }
-      const res = await signIn('google', { callbackUrl: '/manage-questions', redirect: false });
+      const res = await signIn('google', { callbackUrl: '/admin/manage-questions', redirect: false });
 
       // If next-auth returned an error, go to admin login so AdminLoginClient
       // can show the inline error and allow retry.
@@ -156,7 +187,7 @@ const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile
         // Send user to the admin login with the error code so AdminLoginClient
         // shows the inline message. Clear the origin cookie will be handled
         // server-side by the error redirect endpoint.
-        router.push(`/admin/login?error=${code}`);
+        router.push(`/admin-access?error=${code}`);
         return;
       }
 
@@ -166,7 +197,7 @@ const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile
       }
     } catch (e) {
       console.error('NavBar Google sign-in failed:', e);
-      router.push('/admin/login');
+      router.push('/admin-access');
     } finally {
       setLoading(false);
     }
@@ -180,7 +211,7 @@ const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile
       >
         <Shield className="w-5 h-5 text-[#df7500]" /> Admin Portal
       </button>
-      {open && (
+          {open && mounted && (
         <div className={`${mobile ? 'relative' : 'absolute right-0'} mt-2 w-full ${mobile ? 'max-w-full' : 'w-80'} bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 p-0`} style={!mobile ? { minWidth: 320 } : {}}>
           {!session ? (
             <div className="p-6">
@@ -228,7 +259,32 @@ const AdminPortalDropdown = ({ session, mobile = false }: { session: any; mobile
               </div>
             </div>
           ) : (
-            <AdminMenu />
+            // If a session exists, only show the AdminMenu for admin accounts
+            // Non-admin signed-in users should not see admin links
+            (session as any)?.user?.isAdmin ? (
+              <AdminMenu />
+            ) : (
+              <div className="p-6">
+                <div className="text-center mb-4">
+                  <div className="mx-auto w-12 h-12 bg-gradient-to-r from-[#df7500] to-[#651321] rounded-full flex items-center justify-center mb-2">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-[#df7500] to-[#651321] bg-clip-text text-transparent">Admin Portal</h1>
+                  <p className="text-gray-600 text-xs mt-1">Access Denied</p>
+                </div>
+                <div className="mb-4 p-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+                  <div className="flex items-start space-x-2">
+                    <div>
+                      <h3 className="text-yellow-800 font-semibold text-sm mb-0.5">You are signed in as Student</h3>
+                      <p className="text-yellow-700 text-xs leading-relaxed"> you do not have administrator access.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center mt-3">
+                  <p className="text-xs text-gray-500">Sign out and sign in with an admin email to access the portal.</p>
+                </div>
+              </div>
+            )
           )}
         </div>
       )}

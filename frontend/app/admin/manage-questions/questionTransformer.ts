@@ -5,7 +5,7 @@ import type {
   QuestionOption,
   QuestionApiResponse,
   Question,
-} from '../../types/quiz';
+} from '../../../types/quiz';
 
 
 export function transformQuizApiQuestion(apiQuestion: QuestionApiResponse): QuestionItem {

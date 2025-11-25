@@ -145,16 +145,12 @@ export default function LoginPage() {
         console.error('Failed to parse JSON response', parseErr);
       }
       if (res.ok && responseData?.success) {
-        const data = responseData.data;
-        // Persist auth token only.
-        localStorage.setItem('authToken', data.authToken);
-        // Normalize and set user context — use `name` per updated User model.
-        setUser({
-          name: formData.name,
-          authToken: data.authToken,
-          number: data.number ?? 1
-        } as any);
-        router.push('/departments');
+        // On successful registration, switch the UI back to the login form
+        // instead of auto-signing-in. This allows the user to explicitly log in.
+        setIsRegistering(false);
+        // Keep the registered email in the form, clear password and other fields.
+        setFormData(prev => ({ ...prev, password: '', name: '', studentId: '' }));
+        setError('Registration successful. Please sign in using your email and password.');
       } else {
         setError(responseData?.message || res.statusText || 'Registration failed');
       }

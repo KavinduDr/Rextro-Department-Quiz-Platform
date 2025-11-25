@@ -86,7 +86,7 @@ function EditQuestionContent() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/admin/login");
+      router.push("/admin-access");
     }
   }, [status, router]);
 
@@ -330,7 +330,7 @@ function EditQuestionContent() {
         setHasUnsavedChanges(false);
         setOriginalQuestion(JSON.parse(JSON.stringify(updatedQuestion))); 
         
-        router.push("/manage-questions");
+        router.push("/admin/manage-questions");
       } catch (dbError) {
         
         console.error('Database save failed, rolling back newly uploaded images:', dbError);
@@ -393,7 +393,7 @@ function EditQuestionContent() {
       setShowDeleteConfirm(false);
       setHasUnsavedChanges(false); 
       setTimeout(() => {
-        router.push("/manage-questions");
+        router.push("/admin/manage-questions");
       }, 500);
     } catch (error) {
       console.error('Error deleting question:', error);
@@ -506,7 +506,7 @@ function EditQuestionContent() {
                 onClick={() => {
                   setShowUnsavedChangesModal(false);
                   setHasUnsavedChanges(false);
-                  router.push("/manage-questions");
+                  router.push("/admin/manage-questions");
                 }}
                 className="px-5 py-2 rounded-lg font-semibold bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-200"
                 style={{ minWidth: 110 }}
@@ -698,7 +698,7 @@ function EditQuestionContent() {
                 if (hasUnsavedChanges) {
                   setShowUnsavedChangesModal(true);
                 } else {
-                  router.push("/manage-questions");
+                  router.push("/admin/manage-questions");
                 }
               }}
               disabled={isSaving || isDeleting}

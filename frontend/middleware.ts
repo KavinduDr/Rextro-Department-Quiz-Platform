@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-const PROTECTED_PREFIXES = ['/add-question', '/departments', '/quiz-numbers', '/quiz'];
+const PROTECTED_PREFIXES = ['/departments', '/quiz-numbers', '/quiz'];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -21,7 +21,6 @@ export default async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/add-question/:path*',
     '/departments',
     '/departments/:path*',
     '/quiz-numbers',
